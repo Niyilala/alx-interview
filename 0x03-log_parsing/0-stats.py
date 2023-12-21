@@ -1,48 +1,32 @@
 #!/usr/bin/python3
-"""
-Script that reads stdin line by line and computes metrics:
-"""
-import sys
+'''log parsing'''
+import signal
+from sys import stdin
+i = 0
+size = 0
+possible = ['200', '301', '400', '401', '403', '404', '405', '500']
+res = {}
 
 
-def logParser():
-    """
-    Reads stdin line by line
-    """
-    counter = 0
-    total_size = 0
-    status_codes = {'200': 0, '301': 0, '400': 0, '401': 0,
-                    '403': 0, '404': 0, '405': 0, '500': 0}
-
-    try:
-        for line in sys.stdin:
-            _, _, _, _, _, _, _, code_str, file_size_str = line.split()
-            if code_str and file_size_str:
-                size = int(file_size_str)
-                if code_str in status_codes.keys():
-                    status_codes[code_str] += 1
-                total_size += size
-                counter += 1
-
-            if counter == 10:
-                logDisplay(total_size, status_codes)
-                counter = 0
-        logDisplay(total_size, status_codes)
-
-    except KeyboardInterrupt as e:
-        logDisplay(total_size, status_codes)
-        raise
+def output(filesize, results):
+    '''printing current stats'''
+    print('File size:', filesize)
+    for k, v in sorted(results.items()):
+        print(f'{k}: {v}')
 
 
-def logDisplay(total_size, status_codes):
-    """
-    Outputs computed metric from logParser()
-    """
-    print('File size: {}'.format(total_size))
-    for key, value in sorted(status_codes.items()):
-        if value != 0:
-            print('{}: {}'.format(key, value))
-
-
-if __name__ == '__main__':
-    logParser()
+try:
+    for line in stdin:
+        content = line.split()
+        if len(content) > 5:
+            if content[-2] in possible:
+                res[content[-2]] = res.get(content[-2], 0) + 1
+            size += int(content[-1])
+        i += 1
+        if i == 10:
+            output(size, res)
+            i = 0
+except Exception as e:
+    pass
+finally:
+    output(size, res)
